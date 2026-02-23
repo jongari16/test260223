@@ -23,6 +23,27 @@
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
+
+            --bg-viz: #f1f5f9;
+            --svg-bg: #ffffff;
+            --fiber-bg: #f1f5f9;
+            --dim-text: #475569;
+        }
+
+        [data-theme="dark"] {
+            --brand: #020617;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --border: #334155;
+            --text-h: #f8fafc;
+            --text-p: #cbd5e1;
+            --text-m: #64748b;
+            --bg-viz: #0f172a;
+            --svg-bg: #1e293b;
+            --fiber-bg: #334155;
+            --dim-text: #94a3b8;
+            --primary: #60a5fa;
+            --primary-light: #1e293b;
         }
 
         * {
@@ -30,6 +51,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
         }
 
         body {
@@ -47,7 +69,7 @@
             color: white;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: 1px solid var(--border);
         }
 
         .brand-box {
@@ -207,6 +229,8 @@
             border-radius: 6px;
             font-size: 0.85rem;
             outline: none;
+            background: var(--bg);
+            color: var(--text-h);
         }
 
         .input-row {
@@ -222,7 +246,7 @@
             flex-direction: column;
             gap: 1.5rem;
             overflow-y: auto;
-            background: #f1f5f9;
+            background: var(--bg-viz);
         }
 
         .card {
@@ -239,7 +263,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            background: #fff;
+            background: var(--svg-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
         }
@@ -260,32 +284,37 @@
         }
 
         .met-lab {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
             color: var(--text-m);
-            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
         }
 
         .met-val {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--brand);
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-h);
+            font-family: 'JetBrains Mono', monospace;
         }
 
+        /* Badges */
         .badge {
+            font-size: 0.65rem;
             padding: 2px 8px;
-            border-radius: 99px;
-            font-size: 0.7rem;
+            border-radius: 4px;
             font-weight: 700;
         }
 
         .badge-pass {
-            background: #d1fae5;
-            color: #065f46;
+            background: var(--success);
+            color: white;
         }
 
         .badge-fail {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--danger);
+            color: white;
         }
 
         .chart-wrap {
@@ -299,9 +328,9 @@
         /* Rebar Logic UI */
         .rebar-grid {
             display: grid;
-            grid-template-columns: 1fr 1.5fr 1.5fr;
-            gap: 8px;
-            margin-bottom: 10px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 8px;
             align-items: center;
         }
 
@@ -316,7 +345,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 10px;
+            margin: 10px 0;
         }
 
         .toggle-field input {
@@ -335,9 +364,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.85rem;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
         }
 
         .check-item:last-child {
@@ -345,12 +374,26 @@
         }
 
         .standard-mark {
-            font-size: 0.65rem;
+            font-size: 10px;
             color: var(--primary);
             font-weight: 800;
             border: 1px solid var(--primary);
             padding: 1px 4px;
             border-radius: 4px;
+        }
+
+        .theme-toggle {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-h);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
     </style>
 </head>
@@ -384,8 +427,11 @@
                 <div id="tab-diagram" class="tab-btn" onclick="switchTab('diagram')">N-M Interaction Diagram</div>
             </div>
             <div style="display:flex; gap:12px; align-items:center;">
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span id="theme-icon">🌙</span> Dark Mode
+                </button>
                 <input id="active-case-name"
-                    style="padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:0.8rem; font-weight:600;"
+                    style="padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:0.8rem; font-weight:600; background:var(--bg); color:var(--text-h);"
                     onchange="syncCaseName()">
                 <button id="calc-trigger"
                     style="background:var(--primary); color:white; border:none; padding:8px 18px; border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer;"
@@ -736,20 +782,31 @@
             }
         }
 
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', target);
+            localStorage.setItem('rc_theme', target);
+            document.getElementById('theme-icon').innerText = target === 'dark' ? '☀️' : '🌙';
+            document.querySelector('.theme-toggle').innerHTML = `<span id="theme-icon">${target === 'dark' ? '☀️' : '🌙'}</span> ${target === 'dark' ? 'Light Mode' : 'Dark Mode'}`;
+            run(); // Refresh SVG and Chart
+        }
+
         function drawDim(x1, y1, x2, y2, label, offset, side = 'right') {
             let htm = '';
             if (side === 'right') {
                 const lx = x1 + offset;
-                htm += `<line x1="${lx}" y1="${y1}" x2="${lx}" y2="${y2}" stroke="#94a3b8" stroke-width="1" />`;
-                htm += `<line x1="${lx - 5}" y1="${y1}" x2="${lx + 5}" y2="${y1}" stroke="#94a3b8" />`;
-                htm += `<line x1="${lx - 5}" y1="${y2}" x2="${lx + 5}" y2="${y2}" stroke="#94a3b8" />`;
-                htm += `<text x="${lx + 10}" y="${(y1 + y2) / 2}" font-size="11" fill="#475569" dominant-baseline="middle" font-weight="700">${label}</text>`;
+                htm += `<line x1="${lx}" y1="${y1}" x2="${lx}" y2="${y2}" stroke="var(--text-m)" stroke-width="1" />`;
+                htm += `<line x1="${lx - 5}" y1="${y1}" x2="${lx + 5}" y2="${y1}" stroke="var(--text-m)" />`;
+                htm += `<line x1="${lx - 5}" y1="${y2}" x2="${lx + 5}" y2="${y2}" stroke="var(--text-m)" />`;
+                htm += `<text x="${lx + 10}" y="${(y1 + y2) / 2}" font-size="11" fill="var(--text-p)" dominant-baseline="middle" font-weight="700">${label}</text>`;
             } else if (side === 'bottom') {
                 const ly = y2 + offset;
-                htm += `<line x1="${x1}" y1="${ly}" x2="${x2}" y2="${ly}" stroke="#94a3b8" stroke-width="1" />`;
-                htm += `<line x1="${x1}" y1="${ly - 5}" x2="${x1}" y2="${ly + 5}" stroke="#94a3b8" />`;
-                htm += `<line x1="${x2}" y1="${ly - 5}" x2="${x2}" y2="${ly + 5}" stroke="#94a3b8" />`;
-                htm += `<text x="${(x1 + x2) / 2}" y="${ly + 16}" font-size="11" fill="#475569" text-anchor="middle" font-weight="700">${label}</text>`;
+                htm += `<line x1="${x1}" y1="${ly}" x2="${x2}" y2="${ly}" stroke="var(--text-m)" stroke-width="1" />`;
+                htm += `<line x1="${x1}" y1="${ly - 5}" x2="${x1}" y2="${ly + 5}" stroke="var(--text-m)" />`;
+                htm += `<line x1="${x2}" y1="${ly - 5}" x2="${x2}" y2="${ly + 5}" stroke="var(--text-m)" />`;
+                htm += `<text x="${(x1 + x2) / 2}" y="${ly + 16}" font-size="11" fill="var(--text-p)" text-anchor="middle" font-weight="700">${label}</text>`;
             }
             return htm;
         }
@@ -759,12 +816,13 @@
             const sc = 260 / Math.max(engine.h, 600); // Leave space for dimensions
             const H = engine.h;
             const d = cases[activeIdx].data;
-            let htm = `<rect x="0" y="0" width="340" height="450" fill="#fff" onmousemove="handleSVGMove(event)" onmouseup="handleSVGUp(event)"/>`;
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            let htm = `<rect x="0" y="0" width="340" height="450" fill="var(--svg-bg)" onmousemove="handleSVGMove(event)" onmouseup="handleSVGUp(event)"/>`;
 
             // Concrete Fibers
             engine.fibers.forEach(f => {
                 const sw = f.w * sc;
-                htm += `<rect x="${(340 - sw) / 2}" y="${(H - f.y - (H / engine.fibers.length) / 2) * sc + 40}" width="${sw}" height="${(H / engine.fibers.length) * sc}" fill="#f1f5f9" />`;
+                htm += `<rect x="${(340 - sw) / 2}" y="${(H - f.y - (H / engine.fibers.length) / 2) * sc + 40}" width="${sw}" height="${(H / engine.fibers.length) * sc}" fill="var(--fiber-bg)" />`;
             });
 
             // Dimensions
@@ -782,8 +840,8 @@
 
             // Neutral Axis
             const na_y = (H - (H - c_na)) * sc + 40;
-            htm += `<line x1="10" y1="${na_y}" x2="330" y2="${na_y}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="8,4" />`;
-            htm += `<text x="330" y="${na_y - 8}" text-anchor="end" font-size="11" fill="#ef4444" font-weight="800">Neutral Axis c=${c_na.toFixed(1)}</text>`;
+            htm += `<line x1="10" y1="${na_y}" x2="330" y2="${na_y}" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="8,4" />`;
+            htm += `<text x="330" y="${na_y - 8}" text-anchor="end" font-size="11" fill="var(--danger)" font-weight="800">Neutral Axis c=${c_na.toFixed(1)}</text>`;
 
             // Rebars
             engine.rebars.forEach(r => {
@@ -791,8 +849,8 @@
                 if (cases[activeIdx].type === 'RECT') {
                     let useW = d.b * 0.7; let sx = (340 - useW * sc) / 2;
                     let step = r.count > 1 ? (useW * sc) / (r.count - 1) : 0;
-                    for (let i = 0; i < r.count; i++) htm += `<circle cx="${(r.count === 1 ? 170 : sx + i * step)}" cy="${ry}" r="${rd / 2}" fill="#1e293b" />`;
-                } else htm += `<circle cx="${(r.rx - (H / 2)) * sc + 170}" cy="${ry}" r="${rd / 2}" fill="#1e293b" />`;
+                    for (let i = 0; i < r.count; i++) htm += `<circle cx="${(r.count === 1 ? 170 : sx + i * step)}" cy="${ry}" r="${rd / 2}" fill="var(--text-h)" />`;
+                } else htm += `<circle cx="${(r.rx - (H / 2)) * sc + 170}" cy="${ry}" r="${rd / 2}" fill="var(--text-h)" />`;
             });
 
             // Handles for Resize
@@ -913,7 +971,149 @@
             reportWindow.document.close();
         }
 
-        window.onload = () => loadCase(0);
+        function drawNM() {
+            const d = cases[activeIdx].data; const pts = engine.getNMPoints(d.fck, d.fy);
+            const ctx = document.getElementById('nm-canvas').getContext('2d');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? '#334155' : '#f1f5f9';
+            const textColor = isDark ? '#94a3b8' : '#475569';
+
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'scatter', data: { datasets: [{ label: 'KDS Nominal Strength Diagram (kNm, kN)', data: pts, showLine: true, borderColor: isDark ? '#60a5fa' : '#2563eb', pointRadius: 0, tension: 0.3, fill: { target: 'origin', above: isDark ? 'rgba(96, 165, 250, 0.05)' : 'rgba(37, 99, 235, 0.05)' } }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Moment (kNm)', color: textColor }, grid: { color: gridColor }, ticks: { color: textColor } },
+                        y: { title: { display: true, text: 'Axial Load (kN)', color: textColor }, grid: { color: gridColor }, ticks: { color: textColor } }
+                    },
+                    plugins: { legend: { labels: { color: textColor, font: { weight: 'bold' } } } }
+                }
+            });
+        }
+
+        function toggleToggles() {
+            const v = document.getElementById('geo-type').value;
+            document.getElementById('input-rect').classList.toggle('hidden', v !== 'RECT');
+            document.getElementById('input-circ').classList.toggle('hidden', v !== 'CIRC');
+            document.getElementById('rebar-rect').classList.toggle('hidden', v !== 'RECT');
+            document.getElementById('rebar-circ').classList.toggle('hidden', v !== 'CIRC');
+            document.getElementById('rect-hollow-inputs').classList.toggle('hidden', !document.getElementById('rect-hollow').checked);
+            document.getElementById('circ-hollow-inputs').classList.toggle('hidden', !document.getElementById('circ-hollow').checked);
+        }
+
+        function loadCase(idx) {
+            activeIdx = idx; const c = cases[idx];
+            document.getElementById('geo-type').value = c.type;
+            document.getElementById('active-case-name').value = c.name;
+            for (let k in c.data) {
+                let el = document.getElementById(k);
+                if (el) { if (el.type === 'checkbox') el.checked = c.data[k]; else el.value = c.data[k]; }
+            }
+            toggleToggles(); run(); renderList();
+        }
+        function addNewCase() { cases.push(JSON.parse(JSON.stringify(cases[0]))); cases[cases.length - 1].name = 'Scenario ' + (cases.length + 1); save(); loadCase(cases.length - 1); }
+        function save() { localStorage.setItem('rc_kds_cases', JSON.stringify(cases)); renderList(); }
+        function renderList() { document.getElementById('case-list').innerHTML = cases.map((c, i) => `<div class="case-item ${i === activeIdx ? 'active' : ''}" onclick="loadCase(${i})">${c.name}</div>`).join(''); }
+        function syncCaseName() { cases[activeIdx].name = document.getElementById('active-case-name').value; save(); }
+        function clearStorage() { if (confirm("Erase all cases?")) { localStorage.clear(); location.reload(); } }
+        function switchTab(t) {
+            document.getElementById('view-analysis').classList.toggle('hidden', t !== 'analysis');
+            document.getElementById('view-diagram').classList.toggle('hidden', t !== 'diagram');
+            document.getElementById('tab-analysis').classList.toggle('active', t === 'analysis');
+            document.getElementById('tab-diagram').classList.toggle('active', t === 'diagram');
+        }
+
+        function generateReport() {
+            const c = cases[activeIdx]; const d = c.data;
+            const t = engine.trace;
+            const reportWindow = window.open('', '_blank');
+            reportWindow.document.write(`
+                <html>
+                <head>
+                    <title>KDS 24 14 21 Structural Report - ${c.name}</title>
+                    <style>
+                        body { font-family: 'Inter', sans-serif; padding: 50px; color: #1e293b; line-height: 1.6; }
+                        header { border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+                        h1 { font-size: 24px; margin: 0; color: #0f172a; }
+                        .scen { font-size: 14px; color: #64748b; }
+                        .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; margin-bottom: 30px; }
+                        h2 { font-size: 18px; color: #2563eb; margin-top: 0; border-left: 4px solid #2563eb; padding-left: 12px; }
+                        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+                        .lbl { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+                        .val { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; font-size: 13px; }
+                        th { background: #f8fafc; font-weight: 700; color: #475569; }
+                        .formula { background: #f1f5f9; padding: 15px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; margin: 10px 0; border-left: 3px solid #cbd5e1; }
+                    </style>
+                </head>
+                <body>
+                    <header>
+                        <div><h1>Structural Design Sheet</h1><span class="scen">KDS 24 14 21 RC Design Code</span></div>
+                        <div style="text-align:right"><span>${c.name}</span><br><span style="font-size:12px">${new Date().toLocaleDateString()}</span></div>
+                    </header>
+
+                    <div class="card">
+                        <h2>1. Design Geometry & Parameters</h2>
+                        <div class="grid">
+                            <div><div class="lbl">Section Shape</div><div class="val">${c.type}</div></div>
+                            <div><div class="lbl">Section Height (h)</div><div class="val">${d.h || d.D_outer} mm</div></div>
+                            <div><div class="lbl">Section Width (b)</div><div class="val">${d.b || d.D_outer} mm</div></div>
+                        </div>
+                        <div class="grid">
+                            <div><div class="lbl">Concrete Strength (fck)</div><div class="val">${d.fck} MPa</div></div>
+                            <div><div class="lbl">Steel Yield (fy)</div><div class="val">${d.fy} MPa</div></div>
+                            <div><div class="lbl">Applied Axial (Pu)</div><div class="val">${d.p_applied} kN</div></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>2. Detailed Calculation Process (Equilibrium)</h2>
+                        <div class="formula">
+                            Step 1: Fiber-based Discretization Methods (N=150)<br>
+                            Step 2: Concrete Stress Model (KDS Parabolic-Rectangular)<br>
+                            Step 3: Resolve Forces (ΣF = 0)<br>
+                            &nbsp;&nbsp;&nbsp;- Conc. Comp (Cc) = ∫ σc dA ≈ ${t.Cc.toFixed(1)} kN<br>
+                            &nbsp;&nbsp;&nbsp;- Steel Tension (Ts) = Σ (Asi * σsi) ≈ ${t.Ts.toFixed(1)} kN<br>
+                            &nbsp;&nbsp;&nbsp;- Target Axial Load P = ${d.p_applied} kN
+                        </div>
+                        <p>Neutral Axis depth (c): <b>${t.c.toFixed(1)} mm</b></p>
+                        <p>Extreme Tensile Strain (εt): <b>${t.et.toFixed(5)}</b></p>
+                    </div>
+
+                    <div class="card">
+                        <h2>3. Design Strength Summary</h2>
+                        <table>
+                            <tr><th>Metric</th><th>Calculation Logic</th><th>Result</th></tr>
+                            <tr><td>Nominal Moment (Mn)</td><td>Σ (Fi * zi) about centroid</td><td class="val">${t.Mn.toFixed(2)} kNm</td></tr>
+                            <tr><td>Safety Factor (φ)</td><td>Strain-based transition</td><td class="val">${t.phi.toFixed(3)}</td></tr>
+                            <tr><td><b>Design Strength (φMn)</b></td><td><b>φ * Mn</b></td><td class="val" style="color:#2563eb; font-size:16px">${(t.Mn * t.phi).toFixed(2)} kNm</td></tr>
+                        </table>
+                    </div>
+
+                    <footer style="margin-top:50px; text-align:center; font-size:11px; color:#94a3b8">
+                        Analytical verification completed via Universal RC Core Engine (Fiber Method).
+                    </footer>
+                    <script>window.print();<\/script>
+                </body>
+                </html>
+            `);
+            reportWindow.document.close();
+        }
+
+        window.onload = () => {
+            const savedTheme = localStorage.getItem('rc_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (savedTheme === 'dark') {
+                document.getElementById('theme-icon').innerText = '☀️';
+                document.querySelector('.theme-toggle').innerHTML = `<span id="theme-icon">☀️</span> Light Mode`;
+            } else {
+                document.getElementById('theme-icon').innerText = '🌙';
+                document.querySelector('.theme-toggle').innerHTML = `<span id="theme-icon">🌙</span> Dark Mode`;
+            }
+            loadCase(0);
+        };
     </script>
 </body>
 
