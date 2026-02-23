@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>RC 단면 휨강도 검토</title>
+<style>
+body {
+    font-family: Arial;
+    padding: 30px;
+    background: #f4f6f8;
+}
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 500px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+input {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0 15px 0;
+}
+button {
+    width: 100%;
+    padding: 10px;
+    background: #1f77b4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+}
+.result {
+    margin-top: 20px;
+    background: #eef3f7;
+    padding: 10px;
+    border-radius: 5px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h2>RC 직사각형 단면 휨강도 검토</h2>
+
+<label>b (mm)</label>
+<input type="number" id="b">
+
+<label>d (mm)</label>
+<input type="number" id="d">
+
+<label>fck (MPa)</label>
+<input type="number" id="fck">
+
+<label>fy (MPa)</label>
+<input type="number" id="fy">
+
+<label>As (mm²)</label>
+<input type="number" id="As">
+
+<button onclick="calculate()">계산하기</button>
+
+<div class="result" id="result"></div>
+</div>
+
+<script>
+function calculate() {
+
+let b = parseFloat(document.getElementById("b").value);
+let d = parseFloat(document.getElementById("d").value);
+let fck = parseFloat(document.getElementById("fck").value);
+let fy = parseFloat(document.getElementById("fy").value);
+let As = parseFloat(document.getElementById("As").value);
+
+let Es = 200000;      // MPa
+let ecu = 0.003;
+
+// β1 계산
+let beta1;
+if (fck <= 28) beta1 = 0.85;
+else if (fck >= 56) beta1 = 0.65;
+else beta1 = 0.85 - 0.05*((fck-28)/7);
+
+// 중립축 깊이
+let a = (As * fy) / (0.85 * fck * b);
+let c = a / beta1;
+
+// 철근 변형률
+let eps_t = ecu * (d - c) / c;
+
+// 항복 여부
+let eps_y = fy / Es;
+let fs = eps_t >= eps_y ? fy : Es * eps_t;
+
+// 공칭모멘트 (N·mm)
+let Mn = As * fs * (d - a/2);
+
+// kN·m 변환
+Mn = Mn / 1e6;
+
+// φ 계산
+let phi;
+if (eps_t >= 0.005) phi = 0.9;
+else if (eps_t <= 0.002) phi = 0.65;
+else phi = 0.65 + (eps_t - 0.002)*(0.25/0.003);
+
+let phiMn = phi * Mn;
+
+document.getElementById("result").innerHTML =
+"중립축 깊이 c = " + c.toFixed(2) + " mm<br>" +
+"철근 변형률 εt = " + eps_t.toFixed(5) + "<br>" +
+"공칭모멘트 Mn = " + Mn.toFixed(2) + " kN·m<br>" +
+"설계강도 φMn = " + phiMn.toFixed(2) + " kN·m<br>" +
+"강도감소계수 φ = " + phi.toFixed(3);
+
+}
+</script>
+
+</body>
+</html>
