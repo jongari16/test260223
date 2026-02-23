@@ -737,27 +737,26 @@
         }
 
         function drawDim(x1, y1, x2, y2, label, offset, side = 'right') {
-            const sc = 340 / Math.max(engine.h, 600);
             let htm = '';
             if (side === 'right') {
                 const lx = x1 + offset;
                 htm += `<line x1="${lx}" y1="${y1}" x2="${lx}" y2="${y2}" stroke="#94a3b8" stroke-width="1" />`;
                 htm += `<line x1="${lx - 5}" y1="${y1}" x2="${lx + 5}" y2="${y1}" stroke="#94a3b8" />`;
                 htm += `<line x1="${lx - 5}" y1="${y2}" x2="${lx + 5}" y2="${y2}" stroke="#94a3b8" />`;
-                htm += `<text x="${lx + 10}" y="${(y1 + y2) / 2}" font-size="10" fill="#64748b" dominant-baseline="middle" font-weight="600">${label}</text>`;
+                htm += `<text x="${lx + 10}" y="${(y1 + y2) / 2}" font-size="11" fill="#475569" dominant-baseline="middle" font-weight="700">${label}</text>`;
             } else if (side === 'bottom') {
                 const ly = y2 + offset;
                 htm += `<line x1="${x1}" y1="${ly}" x2="${x2}" y2="${ly}" stroke="#94a3b8" stroke-width="1" />`;
                 htm += `<line x1="${x1}" y1="${ly - 5}" x2="${x1}" y2="${ly + 5}" stroke="#94a3b8" />`;
                 htm += `<line x1="${x2}" y1="${ly - 5}" x2="${x2}" y2="${ly + 5}" stroke="#94a3b8" />`;
-                htm += `<text x="${(x1 + x2) / 2}" y="${ly + 15}" font-size="10" fill="#64748b" text-anchor="middle" font-weight="600">${label}</text>`;
+                htm += `<text x="${(x1 + x2) / 2}" y="${ly + 16}" font-size="11" fill="#475569" text-anchor="middle" font-weight="700">${label}</text>`;
             }
             return htm;
         }
 
         function drawSVG(c_na) {
             const svg = document.getElementById('viz-svg');
-            const sc = 340 / Math.max(engine.h, 600);
+            const sc = 260 / Math.max(engine.h, 600); // Leave space for dimensions
             const H = engine.h;
             const d = cases[activeIdx].data;
             let htm = `<rect x="0" y="0" width="340" height="450" fill="#fff" onmousemove="handleSVGMove(event)" onmouseup="handleSVGUp(event)"/>`;
@@ -765,28 +764,30 @@
             // Concrete Fibers
             engine.fibers.forEach(f => {
                 const sw = f.w * sc;
-                htm += `<rect x="${(340 - sw) / 2}" y="${(H - f.y - (H / engine.fibers.length) / 2) * sc + 20}" width="${sw}" height="${(H / engine.fibers.length) * sc}" fill="#f1f5f9" />`;
+                htm += `<rect x="${(340 - sw) / 2}" y="${(H - f.y - (H / engine.fibers.length) / 2) * sc + 40}" width="${sw}" height="${(H / engine.fibers.length) * sc}" fill="#f1f5f9" />`;
             });
 
             // Dimensions
             if (cases[activeIdx].type === 'RECT') {
                 const bw = d.b * sc, bh = d.h * sc;
                 const ox = (340 - bw) / 2;
-                htm += drawDim(ox + bw, 20, ox + bw, 20 + bh, `h=${d.h}`, 20, 'right');
-                htm += drawDim(ox, 20 + bh, ox + bw, 20 + bh, `b=${d.b}`, 20, 'bottom');
+                htm += drawDim(ox + bw, 40, ox + bw, 40 + bh, `h=${d.h}`, 25, 'right');
+                htm += drawDim(ox, 40 + bh, ox + bw, 40 + bh, `b=${d.b}`, 25, 'bottom');
             } else {
                 const diam = d.D_outer * sc;
-                htm += drawDim(170 - diam / 2, 20 + diam, 170 + diam / 2, 20 + diam, `D=${d.D_outer}`, 20, 'bottom');
+                const ox = (340 - diam) / 2;
+                htm += drawDim(ox + diam, 40, ox + diam, 40 + diam, `D=${d.D_outer}`, 25, 'right');
+                htm += drawDim(ox, 40 + diam, ox + diam, 40 + diam, `D=${d.D_outer}`, 25, 'bottom');
             }
 
             // Neutral Axis
-            const na_y = (H - (H - c_na)) * sc + 20;
+            const na_y = (H - (H - c_na)) * sc + 40;
             htm += `<line x1="10" y1="${na_y}" x2="330" y2="${na_y}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="8,4" />`;
             htm += `<text x="330" y="${na_y - 8}" text-anchor="end" font-size="11" fill="#ef4444" font-weight="800">Neutral Axis c=${c_na.toFixed(1)}</text>`;
 
             // Rebars
             engine.rebars.forEach(r => {
-                const ry = (H - r.y) * sc + 20; const rd = r.dia * sc;
+                const ry = (H - r.y) * sc + 40; const rd = r.dia * sc;
                 if (cases[activeIdx].type === 'RECT') {
                     let useW = d.b * 0.7; let sx = (340 - useW * sc) / 2;
                     let step = r.count > 1 ? (useW * sc) / (r.count - 1) : 0;
@@ -798,11 +799,13 @@
             if (cases[activeIdx].type === 'RECT') {
                 const bw = d.b * sc, bh = d.h * sc;
                 const ox = (340 - bw) / 2;
-                htm += `<rect x="${ox + bw - 5}" y="${20}" width="10" height="${bh}" fill="transparent" style="cursor:ew-resize" onmousedown="isDragging=true; dragPart='b'; event.stopPropagation();" />`;
-                htm += `<rect x="${ox}" y="${20 + bh - 5}" width="${bw}" height="10" fill="transparent" style="cursor:ns-resize" onmousedown="isDragging=true; dragPart='h'; event.stopPropagation();" />`;
+                htm += `<rect x="${ox + bw - 5}" y="${40}" width="10" height="${bh}" fill="transparent" style="cursor:ew-resize" onmousedown="isDragging=true; dragPart='b'; event.stopPropagation();" />`;
+                htm += `<rect x="${ox}" y="${40 + bh - 5}" width="${bw}" height="10" fill="transparent" style="cursor:ns-resize" onmousedown="isDragging=true; dragPart='h'; event.stopPropagation();" />`;
             } else {
                 const diam = d.D_outer * sc;
-                htm += `<circle cx="${170 + diam / 2}" cy="${20 + diam / 2}" r="15" fill="transparent" style="cursor:nwse-resize" onmousedown="isDragging=true; dragPart='D'; event.stopPropagation();" />`;
+                const ox = (340 - diam) / 2;
+                htm += `<rect x="${ox + diam - 5}" y="${40}" width="10" height="${diam}" fill="transparent" style="cursor:ew-resize" onmousedown="isDragging=true; dragPart='D'; event.stopPropagation();" />`;
+                htm += `<rect x="${ox}" y="${40 + diam - 5}" width="${diam}" height="10" fill="transparent" style="cursor:ns-resize" onmousedown="isDragging=true; dragPart='D'; event.stopPropagation();" />`;
             }
 
             svg.innerHTML = htm;
@@ -814,16 +817,18 @@
             const rect = svg.getBoundingClientRect();
             const x = e.clientX - rect.left, y = e.clientY - rect.top;
             const c = cases[activeIdx];
-            const sc = 340 / Math.max(engine.h, 600);
+            const sc = 260 / Math.max(engine.h, 600);
 
             if (dragPart === 'b') {
                 const bw = (x - 170) * 2 / sc;
                 if (bw > 50) { c.data.b = Math.round(bw); document.getElementById('b').value = c.data.b; }
             } else if (dragPart === 'h') {
-                const bh = (y - 20) / sc;
+                const bh = (y - 40) / sc;
                 if (bh > 50) { c.data.h = Math.round(bh); document.getElementById('h').value = c.data.h; }
             } else if (dragPart === 'D') {
-                const diam = (x - 170) * 2 / sc;
+                const d_x = (x - 170) * 2 / sc;
+                const d_y = (y - 40) / sc;
+                const diam = Math.max(d_x, d_y);
                 if (diam > 50) { c.data.D_outer = Math.round(diam); document.getElementById('D_outer').value = c.data.D_outer; }
             }
             run();
