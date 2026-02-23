@@ -1,120 +1,660 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
+
 <head>
-<meta charset="UTF-8">
-<title>RC 단면 휨강도 검토</title>
-<style>
-body {
-    font-family: Arial;
-    padding: 30px;
-    background: #f4f6f8;
-}
-.container {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 500px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-input {
-    width: 100%;
-    padding: 8px;
-    margin: 5px 0 15px 0;
-}
-button {
-    width: 100%;
-    padding: 10px;
-    background: #1f77b4;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-}
-.result {
-    margin-top: 20px;
-    background: #eef3f7;
-    padding: 10px;
-    border-radius: 5px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal RC Core | Rectangular & Circular</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --sidebar-w: 280px;
+            --brand: #0f172a;
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-h: #0f172a;
+            --text-p: #475569;
+            --text-m: #94a3b8;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-h);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--brand);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .brand-box {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+        .case-mgmt {
+            flex: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+        }
+
+        .case-mgmt h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-m);
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+
+        .case-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.4rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            color: var(--text-m);
+        }
+
+        .case-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .case-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .add-btn {
+            width: 100%;
+            border: 1px dashed #ffffff33;
+            background: none;
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .topbar {
+            height: 60px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .tab-btn {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-p);
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .workspace {
+            flex: 1;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+        }
+
+        .config-pane {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 1.25rem;
+        }
+
+        .ctrl-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .ctrl-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-m);
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.4rem;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .field label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-p);
+        }
+
+        .field input,
+        .field select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        /* View Pane */
+        .view-pane {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .viz-box {
+            min-height: 450px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .met {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .met-lab {
+            font-size: 0.7rem;
+            color: var(--text-m);
+            font-weight: 600;
+        }
+
+        .met-val {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--brand);
+        }
+
+        .badge {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        .chart-wrap {
+            height: 450px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Rebar Logic UI */
+        .rebar-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1.5fr;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .rebar-header {
+            font-size: 0.65rem;
+            color: var(--text-m);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .toggle-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .toggle-field input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .toggle-field label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body>
-<div class="container">
-<h2>RC 직사각형 단면 휨강도 검토</h2>
+    <aside class="sidebar">
+        <div class="brand-box">
+            <div class="brand-logo">RC</div>
+            <div style="font-weight: 700; font-size: 1rem;">Universal Core</div>
+        </div>
+        <div class="case-mgmt">
+            <h3>Design Cases</h3>
+            <div id="case-list"></div>
+            <button class="add-btn" onclick="addNewCase()">+ New Analysis Case</button>
+        </div>
+        <div style="margin-top: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 10px;">
+            <button class="add-btn" style="background:#10b981; border:none;" onclick="generateReport()">Detailed
+                Report</button>
+            <button class="add-btn" style="color:#ef4444; border:1px solid #ef444433; font-size: 0.7rem;"
+                onclick="clearStorage()">⚠️ System Reset</button>
+        </div>
+    </aside>
 
-<label>b (mm)</label>
-<input type="number" id="b">
+    <main class="main">
+        <header class="topbar">
+            <div class="tabs">
+                <div id="tab-analysis" class="tab-btn active" onclick="switchTab('analysis')">Section Analysis</div>
+                <div id="tab-diagram" class="tab-btn" onclick="switchTab('diagram')">N-M Diagram</div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <input id="active-case-name"
+                    style="padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:0.8rem; font-weight:600;"
+                    onchange="syncCaseName()">
+                <button id="calc-trigger"
+                    style="background:var(--primary); color:white; border:none; padding:8px 18px; border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer;"
+                    onclick="run()">Calculate</button>
+            </div>
+        </header>
 
-<label>d (mm)</label>
-<input type="number" id="d">
+        <section class="workspace">
+            <div class="config-pane">
+                <div class="ctrl-group">
+                    <div class="ctrl-title">Base Geometry</div>
+                    <div class="field">
+                        <label>Section Type</label>
+                        <select id="geo-type" onchange="toggleToggles(); run();">
+                            <option value="RECT">Rectangular / 사각형</option>
+                            <option value="CIRC">Circular / 원형</option>
+                        </select>
+                    </div>
 
-<label>fck (MPa)</label>
-<input type="number" id="fck">
+                    <div id="input-rect">
+                        <div class="input-row">
+                            <div class="field"><label>Width (b)</label><input type="number" id="b" value="400"
+                                    oninput="run()"></div>
+                            <div class="field"><label>Height (h)</label><input type="number" id="h" value="700"
+                                    oninput="run()"></div>
+                        </div>
+                        <div class="toggle-field">
+                            <input type="checkbox" id="rect-hollow" onchange="toggleToggles(); run();">
+                            <label for="rect-hollow">Hollow Section (중공 단면)</label>
+                        </div>
+                        <div id="rect-hollow-inputs" class="input-row hidden">
+                            <div class="field"><label>Inner b (bi)</label><input type="number" id="bi" value="300"
+                                    oninput="run()"></div>
+                            <div class="field"><label>Inner h (hi)</label><input type="number" id="hi" value="600"
+                                    oninput="run()"></div>
+                        </div>
+                    </div>
 
-<label>fy (MPa)</label>
-<input type="number" id="fy">
+                    <div id="input-circ" class="hidden">
+                        <div class="field"><label>Diameter (D)</label><input type="number" id="D_outer" value="1000"
+                                oninput="run()"></div>
+                        <div class="toggle-field">
+                            <input type="checkbox" id="circ-hollow" onchange="toggleToggles(); run();">
+                            <label for="circ-hollow">Hollow Section (중공 단면)</label>
+                        </div>
+                        <div id="circ-hollow-inputs" class="field hidden"><label>Inner Diameter (Di)</label><input
+                                type="number" id="D_inner" value="600" oninput="run()"></div>
+                    </div>
+                </div>
 
-<label>As (mm²)</label>
-<input type="number" id="As">
+                <div class="ctrl-group">
+                    <div class="ctrl-title">Reinforcement Model</div>
+                    <div id="rebar-rect">
+                        <div class="rebar-grid">
+                            <div class="rebar-header">Layer</div>
+                            <div class="rebar-header">Count</div>
+                            <div class="rebar-header">Dia</div>
+                        </div>
+                        <div class="rebar-grid">
+                            <span style="font-size:0.75rem; font-weight:600;">Tensile (Bot)</span>
+                            <input type="number" id="as_count" value="4" oninput="run()">
+                            <select id="as_dia" onchange="run()">
+                                <option value="12.7">D13</option>
+                                <option value="15.9">D16</option>
+                                <option value="19.1">D19</option>
+                                <option value="22.2" selected>D22</option>
+                                <option value="25.4">D25</option>
+                                <option value="28.6">D29</option>
+                                <option value="31.8">D32</option>
+                            </select>
+                        </div>
+                        <div class="rebar-grid">
+                            <span style="font-size:0.75rem; font-weight:600;">Comp (Top)</span>
+                            <input type="number" id="asp_count" value="2" oninput="run()">
+                            <select id="asp_dia" onchange="run()">
+                                <option value="12.7">D13</option>
+                                <option value="15.9">D16</option>
+                                <option value="19.1" selected>D19</option>
+                                <option value="22.2">D22</option>
+                                <option value="25.4">D25</option>
+                            </select>
+                        </div>
+                        <div class="input-row" style="margin-top:10px;">
+                            <div class="field"><label>Cover (Bot)</label><input type="number" id="cover_bot" value="65"
+                                    oninput="run()"></div>
+                            <div class="field"><label>Cover (Top)</label><input type="number" id="cover_top" value="65"
+                                    oninput="run()"></div>
+                        </div>
+                    </div>
 
-<button onclick="calculate()">계산하기</button>
+                    <div id="rebar-circ" class="hidden">
+                        <div class="rebar-grid">
+                            <div class="rebar-header">Distribution</div>
+                            <div class="rebar-header">Count</div>
+                            <div class="rebar-header">Dia</div>
+                        </div>
+                        <div class="rebar-grid">
+                            <span style="font-size:0.75rem; font-weight:600;">Perimeter</span>
+                            <input type="number" id="circ_rebar_count" value="12" oninput="run()">
+                            <select id="circ_rebar_dia" onchange="run()">
+                                <option value="19.1">D19</option>
+                                <option value="22.2" selected>D22</option>
+                                <option value="25.4">D25</option>
+                                <option value="28.6">D29</option>
+                                <option value="31.8">D32</option>
+                            </select>
+                        </div>
+                        <div class="field"><label>Net Cover (mm)</label><input type="number" id="circ_cover" value="80"
+                                oninput="run()"></div>
+                    </div>
+                </div>
 
-<div class="result" id="result"></div>
-</div>
+                <div class="ctrl-group">
+                    <div class="ctrl-title">Design Criteria</div>
+                    <div class="input-row">
+                        <div class="field"><label>fck (MPa)</label><input type="number" id="fck" value="30"
+                                oninput="run()"></div>
+                        <div class="field"><label>fy (MPa)</label><input type="number" id="fy" value="400"
+                                oninput="run()"></div>
+                    </div>
+                    <div class="field"><label>Nominal Axial Load (kN)</label><input type="number" id="p_applied"
+                            value="0" oninput="run()"></div>
+                </div>
+            </div>
 
-<script>
-function calculate() {
+            <div class="view-pane">
+                <div id="view-analysis">
+                    <div class="viz-box"><svg id="viz-svg" width="340" height="420" viewBox="0 0 340 420"></svg></div>
+                    <div class="results">
+                        <div class="card met"><span class="met-lab">Design Moment (φMn)</span><span class="met-val"
+                                id="res-phimn">0.00 kNm</span></div>
+                        <div class="card met"><span class="met-lab">Neutral Axis (c)</span><span class="met-val"
+                                id="res-c">0.0 mm</span></div>
+                        <div class="card met"><span class="met-lab">Total Steel Area</span><span class="met-val"
+                                id="res-as-total">0 mm²</span></div>
+                    </div>
+                </div>
+                <div id="view-diagram" class="hidden">
+                    <div class="card chart-wrap"><canvas id="nm-canvas"></canvas></div>
+                </div>
+            </div>
+        </section>
+    </main>
 
-let b = parseFloat(document.getElementById("b").value);
-let d = parseFloat(document.getElementById("d").value);
-let fck = parseFloat(document.getElementById("fck").value);
-let fy = parseFloat(document.getElementById("fy").value);
-let As = parseFloat(document.getElementById("As").value);
+    <script>
+        const DIA_MAP = { "12.7": 126.7, "15.9": 198.6, "19.1": 286.5, "22.2": 387.1, "25.4": 506.7, "28.6": 642.4, "31.8": 794.2 };
 
-let Es = 200000;      // MPa
-let ecu = 0.003;
+        class CoreEngine {
+            constructor() { this.fibers = []; this.rebars = []; this.h = 0; }
+            clear() { this.fibers = []; this.rebars = []; }
 
-// β1 계산
-let beta1;
-if (fck <= 28) beta1 = 0.85;
-else if (fck >= 56) beta1 = 0.65;
-else beta1 = 0.85 - 0.05*((fck-28)/7);
+            setRect(b, h, bi = 0, hi = 0) {
+                this.clear(); const n = 100; const dy = h / n;
+                for (let i = 0; i < n; i++) {
+                    const y = i * dy + dy / 2; let w = b;
+                    if (bi > 0 && hi > 0 && y > (h - hi) / 2 && y < (h + hi) / 2) w -= bi;
+                    if (w > 0) this.fibers.push({ y, area: w * dy, w });
+                } this.h = h;
+            }
+            setCirc(D, Di = 0) {
+                this.clear(); const n = 120; const dy = D / n; const R = D / 2, Ri = Di / 2;
+                for (let i = 0; i < n; i++) {
+                    const y = i * dy + dy / 2; const dist = Math.abs(y - R);
+                    let w = (dist < R) ? 2 * Math.sqrt(R * R - dist ** 2) : 0;
+                    if (Di > 0 && dist < Ri) w -= 2 * Math.sqrt(Ri * Ri - dist ** 2);
+                    if (w > 0) this.fibers.push({ y, area: w * dy, w });
+                } this.h = D;
+            }
 
-// 중립축 깊이
-let a = (As * fy) / (0.85 * fck * b);
-let c = a / beta1;
+            analyze(fck, fy, targetP = 0) {
+                const Es = 200000, ecu = 0.0033;
+                let cl = 1, cr = this.h * 10, c = this.h;
+                const stress = (e) => (e <= 0 ? 0 : (e <= 0.002 ? 0.85 * fck * (2 * (e / 0.002) - (e / 0.002) ** 2) : 0.85 * fck));
+                for (let i = 0; i < 60; i++) {
+                    c = (cl + cr) / 2; let P = 0;
+                    this.fibers.forEach(f => P += stress(ecu * (c - (this.h - f.y)) / c) * f.area);
+                    this.rebars.forEach(r => { const e = ecu * (c - (this.h - r.y)) / c; P -= Math.min(fy, Math.abs(e * Es)) * Math.sign(e) * r.area; });
+                    if (Math.abs(P - targetP) < 10) break; if (P > targetP) cr = c; else cl = c;
+                }
+                let Mn = 0;
+                this.fibers.forEach(f => Mn += stress(ecu * (c - (this.h - f.y)) / c) * f.area * (f.y - (this.h - c)));
+                this.rebars.forEach(r => { const e = ecu * (c - (this.h - r.y)) / c; Mn -= Math.min(fy, Math.abs(e * Es)) * Math.sign(e) * r.area * (r.y - (this.h - c)); });
+                return { Mn: Mn / 1e6, c };
+            }
 
-// 철근 변형률
-let eps_t = ecu * (d - c) / c;
+            getNMPoints(fck, fy) {
+                const pts = []; const ecu = 0.0033, Es = 200000;
+                const stress = (e) => (e <= 0 ? 0 : (e <= 0.002 ? 0.85 * fck * (2 * (e / 0.002) - (e / 0.002) ** 2) : 0.85 * fck));
+                for (let i = 0; i <= 50; i++) {
+                    const c = (this.h / 50) * i + 0.5; let P = 0, M = 0;
+                    this.fibers.forEach(f => { const s = stress(ecu * (c - (this.h - f.y)) / c); P += s * f.area; M += s * f.area * (f.y - this.h / 2); });
+                    this.rebars.forEach(r => { const e = ecu * (c - (this.h - r.y)) / c; const s = Math.min(fy, Math.abs(e * Es)) * Math.sign(e); P -= s * r.area; M -= s * r.area * (r.y - this.h / 2); });
+                    pts.push({ x: Math.abs(M / 1e6), y: P / 1e3 });
+                } return pts.sort((a, b) => a.y - b.y);
+            }
+        }
 
-// 항복 여부
-let eps_y = fy / Es;
-let fs = eps_t >= eps_y ? fy : Es * eps_t;
+        let cases = JSON.parse(localStorage.getItem('rc_core_cases')) || [{ name: 'Default Beam', type: 'RECT', data: { b: 400, h: 700, fck: 30, fy: 400, as_count: 4, as_dia: '22.2', asp_count: 2, asp_dia: '19.1', cover_bot: 65, cover_top: 65, circ_rebar_count: 12, circ_rebar_dia: '22.2', circ_cover: 80, D_outer: 1000, D_inner: 600, bi: 300, hi: 600, isRectHollow: false, isCircHollow: false } }];
+        let activeIdx = 0;
+        const engine = new CoreEngine();
+        let chart = null;
 
-// 공칭모멘트 (N·mm)
-let Mn = As * fs * (d - a/2);
+        function run() {
+            const c = cases[activeIdx]; c.type = document.getElementById('geo-type').value;
+            const inputs = ['b', 'h', 'bi', 'hi', 'D_outer', 'D_inner', 'fck', 'fy', 'p_applied', 'as_count', 'asp_count', 'cover_bot', 'cover_top', 'circ_rebar_count', 'circ_cover'];
+            inputs.forEach(id => { if (document.getElementById(id)) c.data[id] = parseFloat(document.getElementById(id).value) || 0; });
+            c.data.as_dia = document.getElementById('as_dia').value;
+            c.data.asp_dia = document.getElementById('asp_dia').value;
+            c.data.circ_rebar_dia = document.getElementById('circ_rebar_dia').value;
+            c.data.isRectHollow = document.getElementById('rect-hollow').checked;
+            c.data.isCircHollow = document.getElementById('circ-hollow').checked;
+            localStorage.setItem('rc_core_cases', JSON.stringify(cases));
 
-// kN·m 변환
-Mn = Mn / 1e6;
+            const d = c.data;
+            engine.rebars = [];
+            let totalAs = 0;
 
-// φ 계산
-let phi;
-if (eps_t >= 0.005) phi = 0.9;
-else if (eps_t <= 0.002) phi = 0.65;
-else phi = 0.65 + (eps_t - 0.002)*(0.25/0.003);
+            if (c.type === 'RECT') {
+                engine.setRect(d.b, d.h, d.isRectHollow ? d.bi : 0, d.isRectHollow ? d.hi : 0);
+                if (d.as_count > 0) { const a = d.as_count * DIA_MAP[d.as_dia]; engine.rebars.push({ y: d.cover_bot, area: a, count: d.as_count, dia: parseFloat(d.as_dia) }); totalAs += a; }
+                if (d.asp_count > 0) { const a = d.asp_count * DIA_MAP[d.asp_dia]; engine.rebars.push({ y: d.h - d.cover_top, area: a, count: d.asp_count, dia: parseFloat(d.asp_dia) }); totalAs += a; }
+            } else {
+                engine.setCirc(d.D_outer, d.isCircHollow ? d.D_inner : 0);
+                const a_each = DIA_MAP[d.circ_rebar_dia];
+                const R_rebar = (d.D_outer / 2) - d.circ_cover;
+                for (let i = 0; i < d.circ_rebar_count; i++) {
+                    const angle = (2 * Math.PI / d.circ_rebar_count) * i;
+                    const ry = (d.D_outer / 2) + R_rebar * Math.cos(angle);
+                    engine.rebars.push({ y: ry, area: a_each, count: 1, dia: parseFloat(d.circ_rebar_dia), rx: (d.D_outer / 2) + R_rebar * Math.sin(angle) });
+                }
+                totalAs = d.circ_rebar_count * a_each;
+            }
 
-let phiMn = phi * Mn;
+            const res = engine.analyze(d.fck, d.fy, d.p_applied * 1000);
+            document.getElementById('res-phimn').innerText = (res.Mn * 0.85).toFixed(2) + " kNm";
+            document.getElementById('res-c').innerText = res.c.toFixed(1) + " mm";
+            document.getElementById('res-as-total').innerText = Math.round(totalAs) + " mm²";
 
-document.getElementById("result").innerHTML =
-"중립축 깊이 c = " + c.toFixed(2) + " mm<br>" +
-"철근 변형률 εt = " + eps_t.toFixed(5) + "<br>" +
-"공칭모멘트 Mn = " + Mn.toFixed(2) + " kN·m<br>" +
-"설계강도 φMn = " + phiMn.toFixed(2) + " kN·m<br>" +
-"강도감소계수 φ = " + phi.toFixed(3);
+            drawSVG(res.c);
+            drawNM();
+        }
 
-}
-</script>
+        function drawSVG(c_na) {
+            const svg = document.getElementById('viz-svg'); const sc = 340 / Math.max(engine.h, 600); const H = engine.h;
+            let htm = `<rect x="0" y="0" width="340" height="420" fill="#fff"/>`;
+            engine.fibers.forEach(f => {
+                const sw = f.w * sc; htm += `<rect x="${(340 - sw) / 2}" y="${(H - f.y - f.area / f.w / 2) * sc + 20}" width="${sw}" height="${(f.area / f.w) * sc}" fill="#e2e8f0" />`;
+            });
+            const na_y = (H - (H - c_na)) * sc + 20;
+            htm += `<line x1="5" y1="${na_y}" x2="335" y2="${na_y}" stroke="#ef4444" stroke-dasharray="4" />`;
+            htm += `<text x="335" y="${na_y - 5}" text-anchor="end" font-size="10" fill="#ef4444" font-weight="700">NA c=${c_na.toFixed(1)}</text>`;
+            engine.rebars.forEach(r => {
+                const ry = (H - r.y) * sc + 20; const rd = r.dia * sc;
+                if (cases[activeIdx].type === 'RECT') {
+                    let width = engine.fibers.find(f => Math.abs(f.y - r.y) < H / 100)?.w || 400;
+                    let useW = width * 0.7; let sx = (340 - useW * sc) / 2;
+                    let step = r.count > 1 ? (useW * sc) / (r.count - 1) : 0;
+                    for (let i = 0; i < r.count; i++) htm += `<circle cx="${(r.count === 1 ? 170 : sx + i * step)}" cy="${ry}" r="${rd / 2}" fill="#0f172a" stroke="#fff" stroke-width="0.5"/>`;
+                } else htm += `<circle cx="${(r.rx - (H / 2)) * sc + 170}" cy="${ry}" r="${rd / 2}" fill="#0f172a" stroke="#fff" stroke-width="0.5"/>`;
+            });
+            svg.innerHTML = htm;
+        }
 
+        function drawNM() {
+            const d = cases[activeIdx].data; const pts = engine.getNMPoints(d.fck, d.fy);
+            const ctx = document.getElementById('nm-canvas').getContext('2d');
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'scatter', data: { datasets: [{ label: 'N-M Envelope (kNm, kN)', data: pts, showLine: true, borderColor: '#2563eb', pointRadius: 0, tension: 0.2 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Moment (kNm)' } }, y: { title: { display: true, text: 'Axial Load (kN)' } } } }
+            });
+        }
+
+        function toggleToggles() {
+            const v = document.getElementById('geo-type').value;
+            document.getElementById('input-rect').classList.toggle('hidden', v !== 'RECT');
+            document.getElementById('input-circ').classList.toggle('hidden', v !== 'CIRC');
+            document.getElementById('rebar-rect').classList.toggle('hidden', v !== 'RECT');
+            document.getElementById('rebar-circ').classList.toggle('hidden', v !== 'CIRC');
+            document.getElementById('rect-hollow-inputs').classList.toggle('hidden', !document.getElementById('rect-hollow').checked);
+            document.getElementById('circ-hollow-inputs').classList.toggle('hidden', !document.getElementById('circ-hollow').checked);
+        }
+
+        function loadCase(idx) {
+            activeIdx = idx; const c = cases[idx];
+            document.getElementById('geo-type').value = c.type;
+            document.getElementById('active-case-name').value = c.name;
+            for (let k in c.data) {
+                let el = document.getElementById(k);
+                if (el) { if (el.type === 'checkbox') el.checked = c.data[k]; else el.value = c.data[k]; }
+            }
+            toggleToggles(); run(); renderList();
+        }
+        function addNewCase() { cases.push(JSON.parse(JSON.stringify(cases[0]))); cases[cases.length - 1].name = 'Case ' + (cases.length + 1); save(); loadCase(cases.length - 1); }
+        function save() { localStorage.setItem('rc_core_cases', JSON.stringify(cases)); renderList(); }
+        function renderList() { document.getElementById('case-list').innerHTML = cases.map((c, i) => `<div class="case-item ${i === activeIdx ? 'active' : ''}" onclick="loadCase(${i})">${c.name}</div>`).join(''); }
+        function syncCaseName() { cases[activeIdx].name = document.getElementById('active-case-name').value; save(); }
+        function clearStorage() { if (confirm("Master Reset?")) { localStorage.clear(); location.reload(); } }
+        function switchTab(t) {
+            document.getElementById('view-analysis').classList.toggle('hidden', t !== 'analysis');
+            document.getElementById('view-diagram').classList.toggle('hidden', t !== 'diagram');
+            document.getElementById('tab-analysis').classList.toggle('active', t === 'analysis');
+            document.getElementById('tab-diagram').classList.toggle('active', t === 'diagram');
+        }
+        function generateReport() { alert("Report generation simplified for core modules. Use Print feature."); window.print(); }
+
+        window.onload = () => loadCase(0);
+    </script>
 </body>
+
 </html>
