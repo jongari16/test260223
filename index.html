@@ -831,58 +831,76 @@
         function handleSVGUp() { isDragging = false; dragPart = null; }
 
         function generateReport() {
-            const c = cases[activeIdx];
-            const d = c.data;
-            const phimn = document.getElementById('res-phimn').innerText;
-            const phi = document.getElementById('res-phi').innerText;
-            const et = document.getElementById('res-st-strain').innerText;
-
+            const c = cases[activeIdx]; const d = c.data;
+            const t = engine.trace;
             const reportWindow = window.open('', '_blank');
             reportWindow.document.write(`
                 <html>
                 <head>
                     <title>KDS 24 14 21 Structural Report - ${c.name}</title>
                     <style>
-                        body { font-family: 'Inter', sans-serif; padding: 40px; color: #333; }
-                        h1 { color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
-                        .section { margin-bottom: 30px; }
-                        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-                        .label { font-weight: bold; color: #64748b; }
-                        .value { font-family: 'JetBrains Mono', monospace; font-weight: bold; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
-                        th { background: #f8fafc; }
+                        body { font-family: 'Inter', sans-serif; padding: 50px; color: #1e293b; line-height: 1.6; }
+                        header { border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+                        h1 { font-size: 24px; margin: 0; color: #0f172a; }
+                        .scen { font-size: 14px; color: #64748b; }
+                        .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; margin-bottom: 30px; }
+                        h2 { font-size: 18px; color: #2563eb; margin-top: 0; border-left: 4px solid #2563eb; padding-left: 12px; }
+                        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+                        .lbl { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+                        .val { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; font-size: 13px; }
+                        th { background: #f8fafc; font-weight: 700; color: #475569; }
+                        .formula { background: #f1f5f9; padding: 15px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; margin: 10px 0; border-left: 3px solid #cbd5e1; }
                     </style>
                 </head>
                 <body>
-                    <h1>KDS 24 14 21 Structural Analysis Report</h1>
-                    <div class="section">
-                        <h2>Scenario: ${c.name}</h2>
-                        <p>Date: ${new Date().toLocaleString()}</p>
-                    </div>
-                    <div class="section">
-                        <h3>Input Parameters</h3>
+                    <header>
+                        <div><h1>Structural Design Sheet</h1><span class="scen">KDS 24 14 21 RC Design Code</span></div>
+                        <div style="text-align:right"><span>${c.name}</span><br><span style="font-size:12px">${new Date().toLocaleDateString()}</span></div>
+                    </header>
+
+                    <div class="card">
+                        <h2>1. Design Geometry & Parameters</h2>
                         <div class="grid">
-                            <div><span class="label">Section Type:</span> <span class="value">${c.type}</span></div>
-                            <div><span class="label">Concrete Strength (fck):</span> <span class="value">${d.fck} MPa</span></div>
-                            <div><span class="label">Rebar Strength (fy):</span> <span class="value">${d.fy} MPa</span></div>
-                            <div><span class="label">Applied Axial Load (Pu):</span> <span class="value">${d.p_applied} kN</span></div>
+                            <div><div class="lbl">Section Shape</div><div class="val">${c.type}</div></div>
+                            <div><div class="lbl">Section Height (h)</div><div class="val">${d.h || d.D_outer} mm</div></div>
+                            <div><div class="lbl">Section Width (b)</div><div class="val">${d.b || d.D_outer} mm</div></div>
+                        </div>
+                        <div class="grid">
+                            <div><div class="lbl">Concrete Strength (fck)</div><div class="val">${d.fck} MPa</div></div>
+                            <div><div class="lbl">Steel Yield (fy)</div><div class="val">${d.fy} MPa</div></div>
+                            <div><div class="lbl">Applied Axial (Pu)</div><div class="val">${d.p_applied} kN</div></div>
                         </div>
                     </div>
-                    <div class="section">
-                        <h3>Analysis Results</h3>
+
+                    <div class="card">
+                        <h2>2. Detailed Calculation Process (Equilibrium)</h2>
+                        <div class="formula">
+                            Step 1: Fiber-based Discretization Methods (N=150)<br>
+                            Step 2: Concrete Stress Model (KDS Parabolic-Rectangular)<br>
+                            Step 3: Resolve Forces (ΣF = 0)<br>
+                            &nbsp;&nbsp;&nbsp;- Conc. Comp (Cc) = ∫ σc dA ≈ ${t.Cc.toFixed(1)} kN<br>
+                            &nbsp;&nbsp;&nbsp;- Steel Tension (Ts) = Σ (Asi * σsi) ≈ ${t.Ts.toFixed(1)} kN<br>
+                            &nbsp;&nbsp;&nbsp;- Target Axial Load P = ${d.p_applied} kN
+                        </div>
+                        <p>Neutral Axis depth (c): <b>${t.c.toFixed(1)} mm</b></p>
+                        <p>Extreme Tensile Strain (εt): <b>${t.et.toFixed(5)}</b></p>
+                    </div>
+
+                    <div class="card">
+                        <h2>3. Design Strength Summary</h2>
                         <table>
-                            <tr><th>Parameter</th><th>Value</th></tr>
-                            <tr><td>Design Moment Strength (φMn)</td><td class="value">${phimn}</td></tr>
-                            <tr><td>Strength Reduction Factor (φ)</td><td class="value">${phi}</td></tr>
-                            <tr><td>Extreme Tensile Strain (εt)</td><td class="value">${et}</td></tr>
-                            <tr><td>Neutral Axis depth (c)</td><td class="value">${document.getElementById('res-c').innerText}</td></tr>
-                            <tr><td>Total Steel Area (As)</td><td class="value">${document.getElementById('res-as-total').innerText}</td></tr>
+                            <tr><th>Metric</th><th>Calculation Logic</th><th>Result</th></tr>
+                            <tr><td>Nominal Moment (Mn)</td><td>Σ (Fi * zi) about centroid</td><td class="val">${t.Mn.toFixed(2)} kNm</td></tr>
+                            <tr><td>Safety Factor (φ)</td><td>Strain-based transition</td><td class="val">${t.phi.toFixed(3)}</td></tr>
+                            <tr><td><b>Design Strength (φMn)</b></td><td><b>φ * Mn</b></td><td class="val" style="color:#2563eb; font-size:16px">${(t.Mn * t.phi).toFixed(2)} kNm</td></tr>
                         </table>
                     </div>
-                    <div class="section">
-                        <p style="font-size: 0.8rem; color: #94a3b8;">Generated by Universal RC Core - KDS 24 14 21 Compliance Module</p>
-                    </div>
+
+                    <footer style="margin-top:50px; text-align:center; font-size:11px; color:#94a3b8">
+                        Analytical verification completed via Universal RC Core Engine (Fiber Method).
+                    </footer>
                     <script>window.print();<\/script>
                 </body>
                 </html>
