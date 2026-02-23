@@ -369,8 +369,8 @@
         <div style="margin-top: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 10px;">
             <div style="font-size: 0.65rem; color: #94a3b8; text-align: center; margin-bottom: 5px;">Compliant with KDS
                 24 14 21</div>
-            <button class="add-btn" style="background:#10b981; border:none;"
-                onclick="alert('Printing Report...')">Structural Report</button>
+            <button class="add-btn" style="background:#10b981; border:none;" onclick="generateReport()">Structural
+                Report</button>
             <button class="add-btn" style="color:#ef4444; border:1px solid #ef444433; font-size: 0.7rem;"
                 onclick="clearStorage()">⚠️ Factory Reset</button>
         </div>
@@ -466,6 +466,8 @@
                                 <option value="19.1" selected>D19</option>
                                 <option value="22.2">D22</option>
                                 <option value="25.4">D25</option>
+                                <option value="28.6">D29</option>
+                                <option value="31.8">D32</option>
                             </select>
                         </div>
                         <div class="input-row" style="margin-top:10px;">
@@ -533,7 +535,7 @@
                                 <div class="check-item"><span>Conc. Max Stress</span><span id="res-conc-stress"
                                         style="color:var(--text-p);">25.5 MPa</span></div>
                                 <div class="check-item"><span>Neutral Depth Ratio</span><span id="res-c-ratio"
-                                        style="color:var(--text-P);">0.34</span></div>
+                                        style="color:var(--text-p);">0.34</span></div>
                             </div>
                         </div>
                     </div>
@@ -641,81 +643,85 @@
         let chart = null;
 
         function run() {
-            const c = cases[activeIdx]; c.type = document.getElementById('geo-type').value;
-            const inputs = ['b', 'h', 'bi', 'hi', 'D_outer', 'D_inner', 'fck', 'fy', 'p_applied', 'as_count', 'asp_count', 'cover_bot', 'cover_top', 'circ_rebar_count', 'circ_cover'];
-            inputs.forEach(id => { if (document.getElementById(id)) c.data[id] = parseFloat(document.getElementById(id).value) || 0; });
-            c.data.as_dia = document.getElementById('as_dia').value;
-            c.data.asp_dia = document.getElementById('asp_dia').value;
-            c.data.circ_rebar_dia = document.getElementById('circ_rebar_dia').value;
-            c.data.isRectHollow = document.getElementById('rect-hollow').checked;
-            c.data.isCircHollow = document.getElementById('circ-hollow').checked;
-            localStorage.setItem('rc_kds_cases', JSON.stringify(cases));
+            try {
+                const c = cases[activeIdx]; c.type = document.getElementById('geo-type').value;
+                const inputs = ['b', 'h', 'bi', 'hi', 'D_outer', 'D_inner', 'fck', 'fy', 'p_applied', 'as_count', 'asp_count', 'cover_bot', 'cover_top', 'circ_rebar_count', 'circ_cover'];
+                inputs.forEach(id => { if (document.getElementById(id)) c.data[id] = parseFloat(document.getElementById(id).value) || 0; });
+                c.data.as_dia = document.getElementById('as_dia')?.value || "22.2";
+                c.data.asp_dia = document.getElementById('asp_dia')?.value || "19.1";
+                c.data.circ_rebar_dia = document.getElementById('circ_rebar_dia')?.value || "22.2";
+                c.data.isRectHollow = document.getElementById('rect-hollow').checked;
+                c.data.isCircHollow = document.getElementById('circ-hollow').checked;
+                localStorage.setItem('rc_kds_cases', JSON.stringify(cases));
 
-            const d = c.data;
-            engine.rebars = [];
-            let totalAs = 0;
-            let d_effective = 0;
+                const d = c.data;
+                engine.rebars = [];
+                let totalAs = 0;
+                let d_effective = 0;
 
-            if (c.type === 'RECT') {
-                engine.setRect(d.b, d.h, d.isRectHollow ? d.bi : 0, d.isRectHollow ? d.hi : 0);
-                if (d.as_count > 0) { const a = d.as_count * DIA_MAP[d.as_dia]; engine.rebars.push({ y: d.cover_bot, area: a, count: d.as_count, dia: parseFloat(d.as_dia) }); totalAs += a; }
-                if (d.asp_count > 0) { const a = d.asp_count * DIA_MAP[d.asp_dia]; engine.rebars.push({ y: d.h - d.cover_top, area: a, count: d.asp_count, dia: parseFloat(d.asp_dia) }); totalAs += a; }
-                d_effective = d.h - d.cover_bot;
-            } else {
-                engine.setCirc(d.D_outer, d.isCircHollow ? d.D_inner : 0);
-                const a_each = DIA_MAP[d.circ_rebar_dia];
-                const R_rebar = (d.D_outer / 2) - d.circ_cover;
-                for (let i = 0; i < d.circ_rebar_count; i++) {
-                    const angle = (2 * Math.PI / d.circ_rebar_count) * i;
-                    const ry = (d.D_outer / 2) + R_rebar * Math.cos(angle);
-                    engine.rebars.push({ y: ry, area: a_each, count: 1, dia: parseFloat(d.circ_rebar_dia), rx: (d.D_outer / 2) + R_rebar * Math.sin(angle) });
+                if (c.type === 'RECT') {
+                    engine.setRect(d.b, d.h, d.isRectHollow ? d.bi : 0, d.isRectHollow ? d.hi : 0);
+                    if (d.as_count > 0) { const a = d.as_count * DIA_MAP[d.as_dia]; engine.rebars.push({ y: d.cover_bot, area: a, count: d.as_count, dia: parseFloat(d.as_dia) }); totalAs += a; }
+                    if (d.asp_count > 0) { const a = d.asp_count * DIA_MAP[d.asp_dia]; engine.rebars.push({ y: d.h - d.cover_top, area: a, count: d.asp_count, dia: parseFloat(d.asp_dia) }); totalAs += a; }
+                    d_effective = d.h - d.cover_bot;
+                } else {
+                    engine.setCirc(d.D_outer, d.isCircHollow ? d.D_inner : 0);
+                    const a_each = DIA_MAP[d.circ_rebar_dia];
+                    const R_rebar = (d.D_outer / 2) - d.circ_cover;
+                    for (let i = 0; i < d.circ_rebar_count; i++) {
+                        const angle = (2 * Math.PI / d.circ_rebar_count) * i;
+                        const ry = (d.D_outer / 2) + R_rebar * Math.cos(angle);
+                        engine.rebars.push({ y: ry, area: a_each, count: 1, dia: parseFloat(d.circ_rebar_dia), rx: (d.D_outer / 2) + R_rebar * Math.sin(angle) });
+                    }
+                    totalAs = d.circ_rebar_count * a_each;
+                    d_effective = (d.D_outer / 2) + R_rebar;
                 }
-                totalAs = d.circ_rebar_count * a_each;
-                d_effective = (d.D_outer / 2) + R_rebar;
+
+                const res = engine.analyze(d.fck, d.fy, d.p_applied * 1000);
+
+                document.getElementById('res-phimn').innerText = (res.Mn * res.phi).toFixed(2) + " kNm";
+                document.getElementById('res-mn').innerText = "Mn: " + res.Mn.toFixed(2) + " kNm";
+                document.getElementById('res-phi').innerText = res.phi.toFixed(3);
+                document.getElementById('res-st-strain').innerText = res.et.toFixed(5);
+                document.getElementById('res-c').innerText = res.c.toFixed(1) + " mm";
+                document.getElementById('res-c-ratio').innerText = (d_effective > 0 ? (res.c / d_effective).toFixed(2) : "0.00");
+                document.getElementById('res-as-total').innerText = Math.round(totalAs) + " mm²";
+                document.getElementById('res-conc-stress').innerText = res.maxStress.toFixed(1) + " MPa";
+
+                const rho = d_effective > 0 ? totalAs / (d.b * d_effective) : 0;
+                const rho_min = Math.max(0.25 * Math.sqrt(d.fck) / d.fy, 1.4 / d.fy);
+
+                const minBadge = document.getElementById('chk-min-as');
+                if (rho >= rho_min) { minBadge.innerText = "PASS"; minBadge.className = "badge badge-pass"; }
+                else { minBadge.innerText = "LOW"; minBadge.className = "badge badge-fail"; }
+
+                const maxBadge = document.getElementById('chk-max-as');
+                if (res.et >= 0.004) { maxBadge.innerText = "PASS"; maxBadge.className = "badge badge-pass"; }
+                else { maxBadge.innerText = "FAIL"; maxBadge.className = "badge badge-fail"; }
+
+                drawSVG(res.c);
+                drawNM();
+            } catch (e) {
+                console.error(e);
+                alert("Error during calculation: " + e.message);
             }
-
-            const res = engine.analyze(d.fck, d.fy, d.p_applied * 1000);
-
-            // Update UI with KDS results
-            document.getElementById('res-phimn').innerText = (res.Mn * res.phi).toFixed(2) + " kNm";
-            document.getElementById('res-mn').innerText = "Mn: " + res.Mn.toFixed(2) + " kNm";
-            document.getElementById('res-phi').innerText = res.phi.toFixed(3);
-            document.getElementById('res-st-strain').innerText = res.et.toFixed(5);
-            document.getElementById('res-c').innerText = res.c.toFixed(1) + " mm";
-            document.getElementById('res-c-ratio').innerText = (res.c / d_effective).toFixed(2);
-            document.getElementById('res-as-total').innerText = Math.round(totalAs) + " mm²";
-            document.getElementById('res-conc-stress').innerText = res.maxStress.toFixed(1) + " MPa";
-
-            // KDS Checks
-            const rho = totalAs / (d.b * d_effective);
-            const rho_min = Math.max(0.25 * Math.sqrt(d.fck) / d.fy, 1.4 / d.fy);
-
-            const minBadge = document.getElementById('chk-min-as');
-            if (rho >= rho_min) { minBadge.innerText = "PASS"; minBadge.className = "badge badge-pass"; }
-            else { minBadge.innerText = "LOW"; minBadge.className = "badge badge-fail"; }
-
-            const maxBadge = document.getElementById('chk-max-as');
-            if (res.et >= 0.004) { maxBadge.innerText = "PASS"; maxBadge.className = "badge badge-pass"; }
-            else { maxBadge.innerText = "FAIL"; maxBadge.className = "badge badge-fail"; }
-
-            drawSVG(res.c);
-            drawNM();
         }
 
         function drawSVG(c_na) {
             const svg = document.getElementById('viz-svg'); const sc = 340 / Math.max(engine.h, 600); const H = engine.h;
             let htm = `<rect x="0" y="0" width="340" height="450" fill="#fff"/>`;
             engine.fibers.forEach(f => {
-                const sw = f.w * sc; htm += `<rect x="${(340 - sw) / 2}" y="${(H - f.y - f.area / f.w / 2) * sc + 20}" width="${sw}" height="${(f.area / f.w) * sc}" fill="#f1f5f9" />`;
+                const sw = f.w * sc; htm += `<rect x="${(340 - sw) / 2}" y="${(H - f.y - (H / engine.fibers.length) / 2) * sc + 20}" width="${sw}" height="${(H / engine.fibers.length) * sc}" fill="#f1f5f9" />`;
             });
             const na_y = (H - (H - c_na)) * sc + 20;
             htm += `<line x1="10" y1="${na_y}" x2="330" y2="${na_y}" stroke="#ef4444" stroke-width="2" stroke-dasharray="6,3" />`;
             htm += `<text x="330" y="${na_y - 8}" text-anchor="end" font-size="11" fill="#ef4444" font-weight="800">Neutral Axis c=${c_na.toFixed(1)}</text>`;
 
+            const d = cases[activeIdx].data;
             engine.rebars.forEach(r => {
                 const ry = (H - r.y) * sc + 20; const rd = r.dia * sc;
                 if (cases[activeIdx].type === 'RECT') {
-                    let width = 400; // default for viz
+                    let width = d.b;
                     let useW = width * 0.7; let sx = (340 - useW * sc) / 2;
                     let step = r.count > 1 ? (useW * sc) / (r.count - 1) : 0;
                     for (let i = 0; i < r.count; i++) htm += `<circle cx="${(r.count === 1 ? 170 : sx + i * step)}" cy="${ry}" r="${rd / 2}" fill="#1e293b" />`;
@@ -764,6 +770,66 @@
             document.getElementById('view-diagram').classList.toggle('hidden', t !== 'diagram');
             document.getElementById('tab-analysis').classList.toggle('active', t === 'analysis');
             document.getElementById('tab-diagram').classList.toggle('active', t === 'diagram');
+        }
+
+        function generateReport() {
+            const c = cases[activeIdx];
+            const d = c.data;
+            const phimn = document.getElementById('res-phimn').innerText;
+            const phi = document.getElementById('res-phi').innerText;
+            const et = document.getElementById('res-st-strain').innerText;
+
+            const reportWindow = window.open('', '_blank');
+            reportWindow.document.write(`
+                <html>
+                <head>
+                    <title>KDS 24 14 21 Structural Report - ${c.name}</title>
+                    <style>
+                        body { font-family: 'Inter', sans-serif; padding: 40px; color: #333; }
+                        h1 { color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
+                        .section { margin-bottom: 30px; }
+                        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                        .label { font-weight: bold; color: #64748b; }
+                        .value { font-family: 'JetBrains Mono', monospace; font-weight: bold; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+                        th { background: #f8fafc; }
+                    </style>
+                </head>
+                <body>
+                    <h1>KDS 24 14 21 Structural Analysis Report</h1>
+                    <div class="section">
+                        <h2>Scenario: ${c.name}</h2>
+                        <p>Date: ${new Date().toLocaleString()}</p>
+                    </div>
+                    <div class="section">
+                        <h3>Input Parameters</h3>
+                        <div class="grid">
+                            <div><span class="label">Section Type:</span> <span class="value">${c.type}</span></div>
+                            <div><span class="label">Concrete Strength (fck):</span> <span class="value">${d.fck} MPa</span></div>
+                            <div><span class="label">Rebar Strength (fy):</span> <span class="value">${d.fy} MPa</span></div>
+                            <div><span class="label">Applied Axial Load (Pu):</span> <span class="value">${d.p_applied} kN</span></div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3>Analysis Results</h3>
+                        <table>
+                            <tr><th>Parameter</th><th>Value</th></tr>
+                            <tr><td>Design Moment Strength (φMn)</td><td class="value">${phimn}</td></tr>
+                            <tr><td>Strength Reduction Factor (φ)</td><td class="value">${phi}</td></tr>
+                            <tr><td>Extreme Tensile Strain (εt)</td><td class="value">${et}</td></tr>
+                            <tr><td>Neutral Axis depth (c)</td><td class="value">${document.getElementById('res-c').innerText}</td></tr>
+                            <tr><td>Total Steel Area (As)</td><td class="value">${document.getElementById('res-as-total').innerText}</td></tr>
+                        </table>
+                    </div>
+                    <div class="section">
+                        <p style="font-size: 0.8rem; color: #94a3b8;">Generated by Universal RC Core - KDS 24 14 21 Compliance Module</p>
+                    </div>
+                    <script>window.print();<\/script>
+                </body>
+                </html>
+            `);
+            reportWindow.document.close();
         }
 
         window.onload = () => loadCase(0);
